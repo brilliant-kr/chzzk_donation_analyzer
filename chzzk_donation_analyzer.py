@@ -143,7 +143,7 @@ class DonationAnalyzer(QMainWindow):
         self.graph_tab.setLayout(layout)
 
     def open_chzzk_api(self):
-        url = 'https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=0&size=1000&searchYear=2025'
+        url = 'https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=0&size=5000&searchYear=2025'
         webbrowser.open(url)
         QMessageBox.information(self, '안내',
             '브라우저에서 치지직 API가 열렸습니다.\n\n'
