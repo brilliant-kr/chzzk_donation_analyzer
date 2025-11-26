@@ -164,7 +164,7 @@ class DonationAnalyzer(QMainWindow):
 
         # 여러 연도 API 열기
         for year in years:
-            url = f'https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=0&size=1000&searchYear={year}'
+            url = f'https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=0&size=5000&searchYear={year}'
             webbrowser.open(url)
 
     def load_from_file(self):
