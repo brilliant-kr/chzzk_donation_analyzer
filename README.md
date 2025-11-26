@@ -1,6 +1,6 @@
 # 치지직 후원 분석기
 치지직(Chzzk) 후원 데이터를 분석하고 시각화하는 도구입니다.  
-[Windows 다운로드](https://github.com/brilliant-kr/chzzk_donation_analyzer/releases/download/v1-windows/chzzk_donation_analyzer.exe)
+[Windows 다운로드](https://github.com/brilliant-kr/chzzk_donation_analyzer/releases/download/v2-windows/chzzk_donation_analyzer.exe)
 
 
 ## 기능
