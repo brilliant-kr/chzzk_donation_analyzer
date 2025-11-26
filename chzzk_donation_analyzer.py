@@ -143,13 +143,29 @@ class DonationAnalyzer(QMainWindow):
         self.graph_tab.setLayout(layout)
 
     def open_chzzk_api(self):
-        url = 'https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=0&size=5000&searchYear=2025'
-        webbrowser.open(url)
-        QMessageBox.information(self, '안내',
-            '브라우저에서 치지직 API가 열렸습니다.\n\n'
-            '1. 브라우저에 표시된 JSON 데이터를 전체 복사하세요 (Ctrl+A, Ctrl+C)\n'
-            '2. 이 프로그램의 입력창에 붙여넣으세요 (Ctrl+V)\n'
-            '3. "분석 시작" 버튼을 클릭하세요')
+        """여러 연도 API를 순차적으로 열기"""
+        from datetime import datetime as dt
+        current_year = dt.now().year
+        years = [2024, 2025]  # 조회할 연도 목록
+
+        msg = QMessageBox()
+        msg.setWindowTitle('치지직 API 데이터 가져오기')
+        msg.setIcon(QMessageBox.Icon.Information)
+        msg.setText(f'여러 연도의 데이터를 조회합니다.\n\n각 연도별로 브라우저가 열립니다.')
+        msg.setInformativeText(
+            '📋 사용 방법:\n\n'
+            '1. 탭에서 JSON 데이터를 전체 복사 (Ctrl+A, Ctrl+C)\n'
+            '2. 이 프로그램 입력창에 붙여넣기 (Ctrl+V)\n'
+            '3. 다음 연도 탭으로 이동하여 1-2 반복\n'
+            '4. 모든 데이터를 입력창에 붙여넣은 후 "분석 시작" 클릭\n\n'
+            '💡 팁: 여러 연도 데이터를 한 번에 붙여넣으면 자동으로 합쳐집니다!'
+        )
+        msg.exec()
+
+        # 여러 연도 API 열기
+        for year in years:
+            url = f'https://api.chzzk.naver.com/commercial/v1/product/purchase/history?page=0&size=1000&searchYear={year}'
+            webbrowser.open(url)
 
     def load_from_file(self):
         file_name, _ = QFileDialog.getOpenFileName(self, '파일 열기', '', 'JSON Files (*.json)')
@@ -173,26 +189,46 @@ class DonationAnalyzer(QMainWindow):
 
     def analyze_data(self):
         try:
-            # JSON 파싱
             json_text = self.json_input.toPlainText().strip()
             if not json_text:
                 QMessageBox.warning(self, '경고', 'JSON 데이터를 입력해주세요.')
                 return
 
-            parsed_data = json.loads(json_text)
+            all_data = []
 
-            # {"code":200,"content":{"data":[...]}} 형식만 지원
-            if 'content' not in parsed_data or 'data' not in parsed_data['content']:
-                QMessageBox.warning(self, '경고', 'JSON 형식이 올바르지 않습니다.\n"content.data" 배열이 필요합니다.')
+            json_objects = []
+            brace_count = 0
+            current_json = ""
+
+            for char in json_text:
+                current_json += char
+                if char == '{':
+                    brace_count += 1
+                elif char == '}':
+                    brace_count -= 1
+                    if brace_count == 0 and current_json.strip():
+                        json_objects.append(current_json.strip())
+                        current_json = ""
+
+            if not json_objects:
+                QMessageBox.warning(self, '경고', '유효한 JSON을 찾을 수 없습니다.')
                 return
 
-            data_array = parsed_data['content']['data']
+            for json_str in json_objects:
+                try:
+                    parsed = json.loads(json_str)
+                    if 'content' in parsed and 'data' in parsed['content']:
+                        data_array = parsed['content']['data']
+                        if isinstance(data_array, list):
+                            all_data.extend(data_array)
+                except:
+                    continue
 
-            if not isinstance(data_array, list):
-                QMessageBox.warning(self, '경고', 'data가 배열 형식이 아닙니다.')
+            if not all_data:
+                QMessageBox.warning(self, '경고', 'JSON 형식이 올바르지 않습니다.\n"content.data" 배열을 찾을 수 없습니다.')
                 return
 
-            self.data = {'data': data_array}
+            self.data = {'data': all_data}
 
             # 분석 수행
             self.perform_analysis()
@@ -203,7 +239,10 @@ class DonationAnalyzer(QMainWindow):
             self.display_time_tables()
             self.display_graphs()
 
-            QMessageBox.information(self, '완료', f'분석이 완료되었습니다.\n총 {len(self.data["data"])}건의 후원 데이터를 분석했습니다.')
+            QMessageBox.information(self, '완료',
+                f'분석이 완료되었습니다.\n'
+                f'총 {len(self.data["data"])}건의 후원 데이터를 분석했습니다.\n'
+                f'({len(json_objects)}개의 JSON 파일 병합)')
 
         except json.JSONDecodeError as e:
             QMessageBox.critical(self, '오류', f'JSON 파싱 오류:\n{str(e)}')
@@ -292,10 +331,10 @@ class DonationAnalyzer(QMainWindow):
 
 
 
-
 {'-'*60}
 Special Thanks to
     치지직 "일없는사람"
+    치지직 "이상민0"
 {'-'*60}
         """
 
@@ -422,9 +461,9 @@ Special Thanks to
         for i, v in enumerate(counts):
             ax6.text(i, v, str(v), ha='center', va='bottom', fontsize=8)
 
-        self.figure.text(0.5, 0.5, '탁월합니다',
-                        fontsize=40, color='gray', alpha=0.1,
-                        ha='center', va='center', rotation=30,
+        self.figure.text(0.5, 0.5, '치지직 탁월합니다',
+                        fontsize=25, color='gray', alpha=0.3,
+                        ha='center', va='center', rotation=20,
                         transform=self.figure.transFigure, zorder=0)
 
         self.figure.tight_layout()
